@@ -373,24 +373,24 @@ void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, d
 void QuadTree::print()
 {
     if (cum_size == 0) {
-        Rprintf("Empty node\n");
+        PRINT("Empty node\n");
         return;
     }
 
     if (is_leaf) {
-        Rprintf("Leaf node; data = [");
+        PRINT("Leaf node; data = [");
         for (int i = 0; i < size; i++) {
             double* point = data + index[i] * QT_NO_DIMS;
-            for (int d = 0; d < QT_NO_DIMS; d++) Rprintf("%f, ", point[d]);
-            Rprintf(" (index = %d)", index[i]);
-            if (i < size - 1) Rprintf("\n");
-            else Rprintf("]\n");
+            for (int d = 0; d < QT_NO_DIMS; d++) PRINT("%f, ", point[d]);
+            PRINT(" (index = %d)", index[i]);
+            if (i < size - 1) PRINT("\n");
+            else PRINT("]\n");
         }
     }
     else {
-        Rprintf("Intersection node with center-of-mass = [");
-        for (int d = 0; d < QT_NO_DIMS; d++) Rprintf("%f, ", center_of_mass[d]);
-        Rprintf("]; children are:\n");
+        PRINT("Intersection node with center-of-mass = [");
+        for (int d = 0; d < QT_NO_DIMS; d++) PRINT("%f, ", center_of_mass[d]);
+        PRINT("]; children are:\n");
         northEast->print();
         northWest->print();
         southEast->print();

@@ -43,7 +43,7 @@
 #' iris_unique <- unique(iris) # Remove duplicates
 #' iris_matrix <- as.matrix(iris_unique[,1:4])
 #' set.seed(42) # Set a seed if you want reproducible results
-#' tsne_out <- Rtsne.multicore(iris_matrix, num_threads = 4) # Run TSNE
+#' tsne_out <- Rtsne.multicore(iris_matrix, num_threads = 2) # Run TSNE
 #' # Show the objects in the 2D tsne representation
 #' plot(tsne_out$Y,col=iris_unique$Species)
 #' 
