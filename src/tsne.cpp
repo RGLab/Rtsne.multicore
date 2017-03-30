@@ -54,6 +54,10 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     double* uY    = (double*) calloc(N * no_dims , sizeof(double));
     double* gains = (double*) malloc(N * no_dims * sizeof(double));
     if (dY == NULL || uY == NULL || gains == NULL) { PRINT("Memory allocation failed!\n"); exit(1); }
+
+	#pragma omp parallel
+
+    #pragma omp for
     for (int i = 0; i < N * no_dims; i++) {
         gains[i] = 1.0;
     }
@@ -61,11 +65,17 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     // Normalize input data (to prevent numerical problems)
     PRINT("Computing input similarities...\n");
     start = omp_get_wtime();
+
+
     zeroMean(X, N, D);
+
     double max_X = .0;
+
     for (int i = 0; i < N * D; i++) {
         if (X[i] > max_X) max_X = X[i];
     }
+
+    #pragma omp for
     for (int i = 0; i < N * D; i++) {
         X[i] /= max_X;
     }
@@ -92,11 +102,13 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     // Step 2
 
     // Lie about the P-values
+	#pragma omp for
     for (int i = 0; i < row_P[N]; i++) {
         val_P[i] *= 12.0;
     }
 
     // Initialize solution (randomly)
+	#pragma omp for
     for (int i = 0; i < N * no_dims; i++) {
         Y[i] = randn() * .0001;
     }
@@ -108,7 +120,7 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
         // Compute approximate gradient
         computeGradient(row_P, col_P, val_P, Y, N, no_dims, dY, theta);
 
-
+		#pragma omp for
         for (int i = 0; i < N * no_dims; i++) {
             // Update gains
             gains[i] = (sign(dY[i]) != sign(uY[i])) ? (gains[i] + .2) : (gains[i] * .8);
@@ -126,6 +138,7 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
 
         // Stop lying about the P-values after a while, and switch momentum
         if (iter == stop_lying_iter) {
+			#pragma omp for
             for (int i = 0; i < row_P[N]; i++) {
                 val_P[i] /= 12.0;
             }
@@ -214,6 +227,7 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
     // Loop over all edges to compute t-SNE error
     int ind1, ind2;
     double C = .0, Q;
+//	#pragma omp parallel for private(ind1,ind2,Q) reduction(+:C)
     for (int n = 0; n < N; n++) {
         ind1 = n * QT_NO_DIMS;
         for (int i = row_P[n]; i < row_P[n + 1]; i++) {
@@ -449,8 +463,11 @@ void TSNE::zeroMean(double* X, int N, int D) {
     // Compute data mean
     double* mean = (double*) calloc(D, sizeof(double));
     if (mean == NULL) { PRINT("Memory allocation failed!\n"); exit(1); }
-    for (int n = 0; n < N; n++) {
-        for (int d = 0; d < D; d++) {
+
+
+    for (int d = 0; d < D; d++) {
+		#pragma omp for
+    	for (int n = 0; n < N; n++) {
             mean[d] += X[n * D + d];
         }
     }
@@ -459,9 +476,11 @@ void TSNE::zeroMean(double* X, int N, int D) {
     }
 
     // Subtract data mean
-    for (int n = 0; n < N; n++) {
-        for (int d = 0; d < D; d++) {
-            X[n * D + d] -= mean[d];
+
+	for (int d = 0; d < D; d++) {
+		#pragma omp for
+		for (int n = 0; n < N; n++) {
+			X[n * D + d] -= mean[d];
         }
     }
     free(mean); mean = NULL;

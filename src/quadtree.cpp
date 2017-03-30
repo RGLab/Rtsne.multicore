@@ -345,6 +345,7 @@ void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, d
     double D;
     double buff[QT_NO_DIMS];
 
+	#pragma omp parallel for private(ind1,ind2,D,buff)
     for (int n = 0; n < N; n++) {
         ind1 = n * QT_NO_DIMS;
         for (int i = row_P[n]; i < row_P[n + 1]; i++) {
