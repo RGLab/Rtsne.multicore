@@ -108,8 +108,7 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     }
 
     // Initialize solution (randomly)
-	#pragma omp for
-    for (int i = 0; i < N * no_dims; i++) {
+	 for (int i = 0; i < N * no_dims; i++) {
         Y[i] = randn() * .0001;
     }
 
