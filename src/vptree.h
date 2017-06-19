@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <queue>
 #include <limits>
-
+#include "config.h"
 
 #ifndef VPTREE_H
 #define VPTREE_H
@@ -163,6 +163,7 @@ private:
     // Function that (recursively) fills the tree
     Node* buildFromPoints( int lower, int upper )
     {
+      Rcpp::RNGScope scope;
         if (upper == lower) {     // indicates that we're done here!
             return NULL;
         }
@@ -174,7 +175,7 @@ private:
         if (upper - lower > 1) {      // if we did not arrive at leaf yet
 
             // Choose an arbitrary point and move it to the start
-            int i = (int) ((double)rand() / RAND_MAX * (upper - lower - 1)) + lower;
+            int i = (int) ((double)R::runif(0,1) * (upper - lower - 1)) + lower;
             std::swap(_items[lower], _items[i]);
 
             // Partition around the median distance
