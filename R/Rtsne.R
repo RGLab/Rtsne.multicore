@@ -16,7 +16,7 @@
 #' If \code{X} is a data.frame, it is transformed into a matrix using \code{\link{model.matrix}}. If \code{X} is a \code{\link{dist}} object, it is currently first expanded into a full distance matrix.
 #' 
 #' @param X matrix; Data matrix
-#' @param dims integer; Output dimensionality (default: 2)
+#' @param dims integer; Output dimensionality (Currently only support 2)
 #' @param initial_dims integer; the number of dimensions that should be retained in the initial PCA step (default: 50)
 #' @param perplexity numeric; Perplexity parameter
 #' @param theta numeric; Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
@@ -74,7 +74,8 @@ Rtsne.multicore.default <- function(X, dims=2, initial_dims=50,
                           # momentum=0.5, final_momentum=0.8,
                           # eta=200.0, exaggeration_factor=12.0
                           , ...) {
-  
+  if(dims!=2)
+    stop("Only 2d output is supported due to its c++ implemenation!")
   # if (!is.logical(is_distance)) { stop("is_distance should be a logical variable")}
   if (!is.numeric(theta) || (theta<0.0) || (theta>1.0) ) { stop("Incorrect theta.")}
   if (nrow(X) - 1 < 3 * perplexity) { stop("Perplexity is too large.")}

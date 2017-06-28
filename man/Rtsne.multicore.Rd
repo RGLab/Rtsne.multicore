@@ -2,26 +2,26 @@
 % Please edit documentation in R/Rtsne.R
 \name{Rtsne.multicore}
 \alias{Rtsne.multicore}
-\alias{Rtsne.multicore.data.frame}
 \alias{Rtsne.multicore.default}
+\alias{Rtsne.multicore.data.frame}
 \title{Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding}
 \usage{
 Rtsne.multicore(X, ...)
 
-\method{Rtsne.multicore}{default}(X, dims = 2, initial_dims = 50,
+\method{Rtsne}{multicore.default}(X, dims = 2, initial_dims = 50,
   perplexity = 30, theta = 0.5, check_duplicates = TRUE, pca = TRUE,
   max_iter = 1000, num_threads = 2, verbose = FALSE,
   is_distance = FALSE, Y_init = NULL, pca_center = TRUE,
   pca_scale = FALSE, ...)
 
-\method{Rtsne.multicore}{data.frame}(X, ...)
+\method{Rtsne}{multicore.data.frame}(X, ...)
 }
 \arguments{
 \item{X}{matrix; Data matrix}
 
 \item{...}{Other arguments that can be passed to Rtsne.multicore}
 
-\item{dims}{integer; Output dimensionality (default: 2)}
+\item{dims}{integer; Output dimensionality (Currently only support 2)}
 
 \item{initial_dims}{integer; the number of dimensions that should be retained in the initial PCA step (default: 50)}
 
@@ -70,15 +70,16 @@ If \code{X} is a data.frame, it is transformed into a matrix using \code{\link{m
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: Default Interface
+\item \code{multicore.default}: Default Interface
 
-\item \code{data.frame}: tsne on data.frame
+\item \code{multicore.data.frame}: tsne on data.frame
 }}
+
 \examples{
 iris_unique <- unique(iris) # Remove duplicates
 iris_matrix <- as.matrix(iris_unique[,1:4])
 set.seed(42) # Set a seed if you want reproducible results
-tsne_out <- Rtsne.multicore(iris_matrix, num_threads = 4) # Run TSNE
+tsne_out <- Rtsne.multicore(iris_matrix, num_threads = 2) # Run TSNE
 # Show the objects in the 2D tsne representation
 plot(tsne_out$Y,col=iris_unique$Species)
 
@@ -91,4 +92,3 @@ Maaten, L. Van Der, 2014. Accelerating t-SNE using Tree-Based Algorithms. Journa
 
 van der Maaten, L.J.P. & Hinton, G.E., 2008. Visualizing High-Dimensional Data Using t-SNE. Journal of Machine Learning Research, 9, pp.2579-2605.
 }
-
