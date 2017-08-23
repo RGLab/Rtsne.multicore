@@ -71,14 +71,19 @@ double euclidean_distance(const DataPoint &t1, const DataPoint &t2) {
     return dd;
 }
 
+double precomputed_distance(const DataPoint &t1, const DataPoint &t2) {
+  double dd = .0;
+  dd = t1.x(t2.index());
+  return dd;
+}
 
-template<typename T, double (*distance)( const T&, const T& )>
+template<typename T>
 class VpTree
 {
 public:
 
     // Default constructor
-    VpTree() : _root(0) {}
+     VpTree(std::function<double (const T&, const T&)> f) : _root(0), distance(f) {}
 
     // Destructor
     ~VpTree() {
@@ -120,7 +125,7 @@ public:
 
 private:
     std::vector<T> _items;
-
+    std::function<double (const T&, const T&)> distance;
     // Single node of a VP tree (has a point and radius; left children are closer to point than the radius)
     struct Node
     {
@@ -154,7 +159,8 @@ private:
     struct DistanceComparator
     {
         const T& item;
-        DistanceComparator(const T& item) : item(item) {}
+        std::function<double (const T&, const T&)> distance;
+        DistanceComparator(const T& item, std::function<double (const T&, const T&)> f) : item(item), distance(f) {}
         bool operator()(const T& a, const T& b) {
             return distance(item, a) < distance(item, b);
         }
@@ -183,7 +189,7 @@ private:
             std::nth_element(_items.begin() + lower + 1,
                              _items.begin() + median,
                              _items.begin() + upper,
-                             DistanceComparator(_items[lower]));
+                             DistanceComparator(_items[lower],distance));
 
             // Threshold of the new node will be the distance to the median
             node->threshold = distance(_items[lower], _items[median]);

@@ -67,7 +67,7 @@ Rtsne.multicore.default <- function(X, dims=2, initial_dims=50,
                           check_duplicates=TRUE, 
                           pca=TRUE, max_iter=1000, num_threads = 2
                           ,verbose=FALSE
-                          , is_distance=FALSE, Y_init=NULL 
+                          , is_distance=class(X)=='dist', Y_init=NULL 
                           ,pca_center=TRUE, pca_scale=FALSE
                           # stop_lying_iter=ifelse(is.null(Y_init),250L,0L), 
                           # mom_switch_iter=ifelse(is.null(Y_init),250L,0L), 
@@ -76,12 +76,20 @@ Rtsne.multicore.default <- function(X, dims=2, initial_dims=50,
                           , ...) {
   if(dims!=2)
     stop("Only 2d output is supported due to its c++ implemenation!")
-  # if (!is.logical(is_distance)) { stop("is_distance should be a logical variable")}
+  if (!is.logical(is_distance)) { stop("is_distance should be a logical variable")}
   if (!is.numeric(theta) || (theta<0.0) || (theta>1.0) ) { stop("Incorrect theta.")}
-  if (nrow(X) - 1 < 3 * perplexity) { stop("Perplexity is too large.")}
-  if (!is.matrix(X)) { stop("Input X is not a matrix")}
+  if (!is_distance && nrow(X) - 1 < 3 * perplexity) { stop("Perplexity is too large.")}
+  if(!class(X) %in% c("dist","matrix")) { stop("Input X must be matrix or a dist object")}
   if (!(max_iter>0)) { stop("Incorrect number of iterations.")}
-  # if (is_distance & !(is.matrix(X) & (nrow(X)==ncol(X)))) { stop("Input is not an accepted distance matrix") }
+  
+  if(is_distance) {
+    # convert to matrix if dist object was supplied
+    if(!is.matrix(X)) {
+      X <- as.matrix(X)
+    }
+    if(nrow(X)!=ncol(X)) { stop("Input is not an accepted distance matrix") }
+  }
+
   # if (!is.null(Y_init) & (nrow(X)!=nrow(Y_init) || ncol(Y_init)!=dims)) { stop("Incorrect format for Y_init.") }
   if (!(is.logical(pca_center) && is.logical(pca_scale)) ) { stop("pca_center and pca_scale should be TRUE or FALSE")}
   # if (!is.integer(stop_lying_iter) || stop_lying_iter<0) { stop("stop_lying_iter should be a positive integer")}
@@ -92,15 +100,15 @@ Rtsne.multicore.default <- function(X, dims=2, initial_dims=50,
   if (!is.wholenumber(initial_dims) || initial_dims<=0) { stop("Incorrect initial dimensionality.")}
   
   # Apply PCA
-  if (pca) {
+  if (pca & !is_distance) {
     pca_result <- prcomp(X,retx=TRUE,center = pca_center, scale. = pca_scale)
     X <- pca_result$x[,1:min(initial_dims,ncol(pca_result$x))]
   }
-  if (check_duplicates){
+  if (check_duplicates & !is_distance){
     if (any(duplicated(X))) { stop("Remove duplicates before running TSNE.") }
   }  
   # Compute Squared distance if we are using exact TSNE
-  if (theta==0.0) {
+  if (is_distance & theta==0.0) {
     X <- X^2
   }
   
@@ -112,7 +120,7 @@ Rtsne.multicore.default <- function(X, dims=2, initial_dims=50,
   # }
   # 
   msg <- capture.output(
-                  res <-  Rtsne_cpp(X, dims, perplexity, theta,num_threads, max_iter
+                  res <-  Rtsne_cpp(X, dims, perplexity, theta,num_threads, max_iter, is_distance
                           # , is_distance, Y_init, init,stop_lying_iter, mom_switch_iter, momentum, final_momentum, eta, exaggeration_factor
                           )
                 )

@@ -4,9 +4,7 @@ using namespace Rcpp;
 
 // Function that runs the Barnes-Hut implementation of t-SNE
 // [[Rcpp::export]]
-Rcpp::List Rtsne_cpp(NumericMatrix X, int no_dims_in, double perplexity_in, 
-                     double theta_in, int num_threads, int max_iter
-                       ) {
+Rcpp::List Rtsne_cpp(NumericMatrix X, int no_dims_in, double perplexity_in, double theta_in, int num_threads, int max_iter, bool distance_precomputed) {
 
   int origN, N, D, no_dims = no_dims_in;
 
@@ -55,7 +53,7 @@ Rcpp::List Rtsne_cpp(NumericMatrix X, int no_dims_in, double perplexity_in,
     // }
     // 
     // Run tsne
-		tsne->run(data, N, D, Y, no_dims, perplexity, theta, num_threads, max_iter
+		tsne->run(data, N, D, Y, no_dims, perplexity, theta, num_threads, max_iter, distance_precomputed
               // , costs, distance_precomputed, itercosts, init, stop_lying_iter, mom_switch_iter, momentum, final_momentum, eta, exaggeration_factor
 		          );
 

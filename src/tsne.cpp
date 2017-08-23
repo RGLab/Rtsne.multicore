@@ -29,7 +29,7 @@ static const int QT_NO_DIMS = 2;
 // D -- input dimentionality
 // Y -- array to fill with the result of size [N, no_dims]
 // no_dims -- target dimentionality
-void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta, int _num_threads, int max_iter
+void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta, int _num_threads, int max_iter, bool distance_precomputed
                  ) {
 
     if (N - 1 < 3 * perplexity) {
@@ -40,7 +40,7 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     num_threads = _num_threads;
     omp_set_num_threads(num_threads);
 
-    PRINT("Using no_dims = %d, perplexity = %f, and theta = %f\n", no_dims, perplexity, theta);
+    PRINT("Using no_dims = %d, perplexity = %f, and theta = %f; distance_precomputed = %d \n", no_dims, perplexity, theta, distance_precomputed);
 
     // Set learning parameters
     double total_time = .0;
@@ -55,7 +55,7 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     double* gains = (double*) malloc(N * no_dims * sizeof(double));
     if (dY == NULL || uY == NULL || gains == NULL) { PRINT("Memory allocation failed!\n"); exit(1); }
 
-	#pragma omp parallel
+#pragma omp parallel
 
     #pragma omp for
     for (int i = 0; i < N * no_dims; i++) {
@@ -66,25 +66,26 @@ void TSNE::run(double* X, int N, int D, double* Y, int no_dims, double perplexit
     PRINT("Computing input similarities...\n");
     start = omp_get_wtime();
 
-
-    zeroMean(X, N, D);
-
-    double max_X = .0;
-
-    for (int i = 0; i < N * D; i++) {
+    if(!distance_precomputed) {
+      zeroMean(X, N, D);
+      
+      double max_X = .0;
+      
+      for (int i = 0; i < N * D; i++) {
         if (X[i] > max_X) max_X = X[i];
-    }
-
-    #pragma omp for
-    for (int i = 0; i < N * D; i++) {
+      }
+      
+      #pragma omp for
+      for (int i = 0; i < N * D; i++) {
         X[i] /= max_X;
+      }
     }
 
     // Compute input similarities
     int* row_P; int* col_P; double* val_P;
 
     // Compute asymmetric pairwise input similarities
-    computeGaussianPerplexity(X, N, D, &row_P, &col_P, &val_P, perplexity, (int) (3 * perplexity));
+    computeGaussianPerplexity(X, N, D, &row_P, &col_P, &val_P, perplexity, (int) (3 * perplexity),distance_precomputed);
 
     // Symmetrize input similarities
     symmetrizeMatrix(&row_P, &col_P, &val_P, N);
@@ -244,7 +245,7 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
 }
 
 // Compute input similarities with a fixed perplexity using ball trees (this function allocates memory another function should free)
-void TSNE::computeGaussianPerplexity(double* X, int N, int D, int** _row_P, int** _col_P, double** _val_P, double perplexity, int K) {
+void TSNE::computeGaussianPerplexity(double* X, int N, int D, int** _row_P, int** _col_P, double** _val_P, double perplexity, int K,const bool distance_precomputed) {
 
     if (perplexity > K) PRINT("Perplexity should be lower than K!\n");
 
@@ -269,7 +270,13 @@ void TSNE::computeGaussianPerplexity(double* X, int N, int D, int** _row_P, int*
     }
 
     // Build ball tree on data set
-    VpTree<DataPoint, euclidean_distance>* tree = new VpTree<DataPoint, euclidean_distance>();
+    VpTree<DataPoint >* tree;
+    if(distance_precomputed) {
+      tree=new VpTree<DataPoint>(precomputed_distance);
+    } else {
+      tree=new VpTree<DataPoint>(euclidean_distance);
+    }
+
     std::vector<DataPoint> obj_X(N, DataPoint(D, -1, X));
     for (int n = 0; n < N; n++) {
         obj_X[n] = DataPoint(D, n, X + n * D);
@@ -280,6 +287,7 @@ void TSNE::computeGaussianPerplexity(double* X, int N, int D, int** _row_P, int*
     PRINT("Building tree...\n");
 
     int steps_completed = 0;
+    
     #pragma omp parallel for
     for (int n = 0; n < N; n++)
     {
@@ -517,10 +525,10 @@ double TSNE::randn() {
 
 extern "C"
 {
-    extern void tsne_run_double(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta, int _num_threads, int max_iter)
+  extern void tsne_run_double(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta, int _num_threads, int max_iter, bool distance_precomputed)
     {
         PRINT("Performing t-SNE using %d cores.\n", _num_threads);
         TSNE tsne;
-        tsne.run(X, N, D, Y, no_dims, perplexity, theta, _num_threads, max_iter);
+        tsne.run(X, N, D, Y, no_dims, perplexity, theta, _num_threads, max_iter, distance_precomputed);
     }
 }
