@@ -5,6 +5,37 @@ R wrapper for multicore Tsne
 Installation
 ------------
 
+
+From source on Mac OS X
+-----------------------
+Your ~/.R/Makevars should look something like the following: (thanks to Cedrik Laczny @claczny , see [issue 5](https://github.com/RGLab/Rtsne.multicore/issues/5))
+```
+## From:
+## https://asieira.github.io/using-openmp-with-r-packages-in-os-x.html
+CC=/opt/local/bin/gcc-mp-5  #or path to clang-4.0 if that's your compiler..
+CXX=/opt/local/bin/g++-mp-5
+CXX1X=/opt/local/bin/g++-mp-5
+SHLIB_CXXLD=/opt/local/bin/g++-mp-5
+FC=/opt/local/bin/gfortran-mp-5
+F77=/opt/local/bin/gfortran-mp-5
+MAKE=make -j2
+
+SHLIB_OPENMP_CFLAGS=-fopenmp
+SHLIB_OPENMP_CXXFLAGS=-fopenmp
+SHLIB_OPENMP_FCFLAGS=-fopenmp
+SHLIB_OPENMP_FFLAGS=-fopenmp
+
+## -- compiling for OpenMP -> https://stackoverflow.com/a/5008957/271775
+PKG_CXXFLAGS=-fopenmp
+## -- linking for OpenMP
+## PKG_LIBS= -fopenmp -lgomp
+PKG_LIBS= -L/opt/local/lib/gcc5/ -lgomp `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
+LDFLAGS = -L/opt/local/lib/gcc5/
+
+R_OPENMP_CFLAGS = -fopenmp
+R_OPENMP_FFLAGS = -fopenmp
+```
+
 To install the latest version from the github repository, use:
 
 ``` r
