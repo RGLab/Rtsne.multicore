@@ -1,5 +1,6 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 R wrapper for multicore Tsne
+(This repo has been deprecated by [jkrijthe/Rtsne openmp branch](https://github.com/jkrijthe/Rtsne/tree/openmp))
 ============================
 
 Installation
